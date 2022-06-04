@@ -9,7 +9,7 @@
 #include <sys/resource.h>
 #include <sched.h>
 #include <QFile>
-
+#include <string>
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -23,7 +23,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->button_prioridade,SIGNAL(clicked(bool)),this,SLOT(prioridade()));
     connect(ui->button_cpu,SIGNAL(clicked(bool)),this,SLOT(cpu()));
 
-    get_process();
+    QString grep = "";
+    get_process(grep);
 }
 
 MainWindow::~MainWindow()
@@ -31,12 +32,21 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::get_process()
+void MainWindow::get_process(QString grep)
 {
     char path[256];
     getcwd(path,256);
-    system("ps -aut > output.txt");
+    QString comando;
+    if(grep==""){
+        comando = "ps -aut > output.txt";
+    }else{
+        comando = "ps -aut | grep "+grep+" >output.txt";
+    }
+    std::string comandoString;
+    comandoString= comando.toUtf8().constData();
+    system(comandoString.c_str());
     QString caminho = QString(path) + "/output.txt";
+
     QFile file(caminho);
     QString output;
 
@@ -79,6 +89,7 @@ void MainWindow::cont()
 void MainWindow::filtro()
 {
     QString value =ui->input_filtro->text();
+    get_process(value);
     qDebug() <<value<<endl;
 }
 void MainWindow::cpu()
