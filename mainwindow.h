@@ -15,7 +15,7 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 public slots:
-    void get_process(QString grep);
+    void get_process();
     void stop();
     void kill_process();
     void cont();

@@ -10,6 +10,11 @@
 #include <sched.h>
 #include <QFile>
 #include <string>
+#include <QTimer>
+#include <QProcess>
+QString grep="";
+
+QString cabecalho = "USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND\n";
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -23,8 +28,12 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->button_prioridade,SIGNAL(clicked(bool)),this,SLOT(prioridade()));
     connect(ui->button_cpu,SIGNAL(clicked(bool)),this,SLOT(cpu()));
 
-    QString grep = "";
-    get_process(grep);
+    QTimer *timer = new QTimer(this);
+    connect(timer, SIGNAL(timeout()), this, SLOT(get_process()));
+    timer->setInterval(200); // 200 milissegundos
+    timer->start(); // Se preferir, pode usar start(200) e remover a linha do setInterval
+
+    //get_process();
 }
 
 MainWindow::~MainWindow()
@@ -32,15 +41,20 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::get_process(QString grep)
+void MainWindow::get_process()
 {
     char path[256];
     getcwd(path,256);
     QString comando;
     if(grep==""){
-        comando = "ps -aut > output.txt";
+        //comando = "ps -aut > output.txt";
+        //comando = "ps aux --sort cpu | head -15 >output.txt";
+        comando = "ps --no-headings -aut  | sort -nr -nk 3 | head -15 >output.txt";
+
     }else{
-        comando = "ps -aut | grep "+grep+" >output.txt";
+        //comando = "ps -aux --sort cpu | grep "+grep+" |head -15 >output.txt";
+        comando = "ps --no-headings -aut | sort -nr -nk 3 |grep "+grep+" |head -15 >output.txt";
+        //comando = "ps -aut | grep "+grep+" >output.txt";
     }
     std::string comandoString;
     comandoString= comando.toUtf8().constData();
@@ -48,7 +62,7 @@ void MainWindow::get_process(QString grep)
     QString caminho = QString(path) + "/output.txt";
 
     QFile file(caminho);
-    QString output;
+    QString output=cabecalho;
 
     if(file.open(QIODevice::ReadOnly)){
         QTextStream in(&file);
@@ -89,8 +103,11 @@ void MainWindow::cont()
 void MainWindow::filtro()
 {
     QString value =ui->input_filtro->text();
-    get_process(value);
-    qDebug() <<value<<endl;
+    grep=value;
+    get_process();
+   // qDebug() <<value<<endl;
+
+
 }
 void MainWindow::cpu()
 {
@@ -110,4 +127,5 @@ void MainWindow::prioridade()
         setpriority(PRIO_PROCESS,PID.toInt(),value.toInt());
         qDebug() <<value<<endl;
     }
+
 }
